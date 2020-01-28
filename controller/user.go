@@ -5,13 +5,22 @@ import (
 )
 
 // InsertUser model into mysql
-func InsertUser(user *User) {
+func InsertUser(user *User) bool {
+	column := []string{"username", "password", "nickname", "email", "photo"}
+	value := []string{user.Username, user.Password, user.Nickname, user.Email, user.Photo}
+	return model.Insert("users", column, value)
+}
 
+// UpdateUser model about mysql
+func UpdateUser(user *User) bool {
+	column := []string{"password", "nickname", "email", "photo"}
+	value := []string{user.Password, user.Nickname, user.Email, user.Photo}
+	return model.Update("users", "username='"+user.Username+"'", column, value)
 }
 
 // QueryUser model about mysql
 func QueryUser(username string) *User {
-	result := model.Query("username,nickname,password,email,photo", "users", "username='"+username+"'")
+	result := model.Query([]string{"username,nickname,password,email,photo"}, "users", "username='"+username+"'")
 	if !result.IsValid {
 		return &User{}
 	}
