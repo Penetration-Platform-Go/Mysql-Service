@@ -11,16 +11,21 @@ import (
 type MysqlService struct {
 }
 
-// QueryUserByUsername gRPC
-func (u *MysqlService) QueryUserByUsername(ctx context.Context, username *mysql.Username) (*mysql.UserInformation, error) {
-	r := controller.QueryUser(username.Username)
-	return &mysql.UserInformation{
-		Username: r.Username,
-		Nickname: r.Nickname,
-		Password: r.Password,
-		Email:    r.Email,
-		Photo:    r.Photo,
-	}, nil
+// QueryUsers gRPC
+func (u *MysqlService) QueryUsers(condition *mysql.Condition, stream mysql.Mysql_QueryUsersServer) error {
+	result := controller.QueryUser(condition.Value)
+	for _, user := range result {
+		if err := stream.Send(&mysql.UserInformation{
+			Username: user.Username,
+			Nickname: user.Nickname,
+			Password: user.Password,
+			Email:    user.Email,
+			Photo:    user.Photo,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // InsertUser gRPC
@@ -47,4 +52,12 @@ func (u *MysqlService) UpdateUser(ctx context.Context, user *mysql.UserInformati
 			Photo:    user.Photo,
 		}),
 	}, nil
+}
+
+// DeleteUser gRPC
+func (u *MysqlService) DeleteUser(ctx context.Context, condition *mysql.Condition) (*mysql.Result, error) {
+	return &mysql.Result{
+		IsVaild: controller.DeleteUser(condition.Value),
+	}, nil
+
 }

@@ -2,7 +2,33 @@ package controller
 
 import (
 	"github.com/Penetration-Platform-Go/Mysql-Service/model"
+	pb "github.com/Penetration-Platform-Go/gRPC-Files/Mysql-Service"
 )
+
+// QueryUser model about mysql
+func QueryUser(con []*pb.Value) []User {
+	condition := "1 = 1"
+	for _, each := range con {
+		condition += " and " + each.Key + " = '" + each.Value + "'"
+	}
+	result := model.Query([]string{"username,nickname,password,email,photo"}, "users", condition)
+	if !result.IsValid {
+		return []User{}
+	}
+	var users []User
+	for result.Value.Next() {
+		var user User
+		var username, nickname, password, email, photo string
+		result.Value.Scan(&username, &nickname, &password, &email, &photo)
+		user.Username = username
+		user.Nickname = nickname
+		user.Password = password
+		user.Email = email
+		user.Photo = photo
+		users = append(users, user)
+	}
+	return users
+}
 
 // InsertUser model into mysql
 func InsertUser(user *User) bool {
@@ -18,21 +44,11 @@ func UpdateUser(user *User) bool {
 	return model.Update("users", "username='"+user.Username+"'", column, value)
 }
 
-// QueryUser model about mysql
-func QueryUser(username string) *User {
-	result := model.Query([]string{"username,nickname,password,email,photo"}, "users", "username='"+username+"'")
-	if !result.IsValid {
-		return &User{}
+// DeleteUser model about mysql
+func DeleteUser(con []*pb.Value) bool {
+	condition := "1 = 1"
+	for _, each := range con {
+		condition += " and " + each.Key + " = '" + each.Value + "'"
 	}
-	var user User
-	for result.Value.Next() {
-		var username, nickname, password, email, photo string
-		result.Value.Scan(&username, &nickname, &password, &email, &photo)
-		user.Username = username
-		user.Nickname = nickname
-		user.Password = password
-		user.Email = email
-		user.Photo = photo
-	}
-	return &user
+	return model.Delete("users", condition)
 }
